@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pantry Expiry Tracker</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f4f8;
+      color: #2d3748;
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, #2d6a4f, #52b788);
+      color: white;
+      padding: 1.5rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    header h1 { font-size: 1.6rem; font-weight: 700; }
+    header span { font-size: 2rem; }
+
+    .container {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.07);
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      margin-bottom: 1rem;
+      color: #2d6a4f;
+      border-bottom: 2px solid #d8f3dc;
+      padding-bottom: 0.5rem;
+    }
+
+    .form-row {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+
+    .form-row input {
+      flex: 1;
+      min-width: 140px;
+      padding: 0.6rem 0.9rem;
+      border: 1px solid #cbd5e0;
+      border-radius: 8px;
+      font-size: 0.95rem;
+      transition: border 0.2s;
+    }
+
+    .form-row input:focus {
+      outline: none;
+      border-color: #52b788;
+      box-shadow: 0 0 0 3px rgba(82,183,136,0.15);
+    }
+
+    button {
+      padding: 0.6rem 1.2rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:active { transform: scale(0.97); }
+
+    .btn-add { background: #52b788; color: white; }
+    .btn-add:hover { background: #40916c; }
+    .btn-danger { background: #fc8181; color: white; }
+    .btn-danger:hover { background: #e53e3e; }
+
+    .filter-bar {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      margin-bottom: 1rem;
+    }
+
+    .filter-bar button {
+      background: #edf2f7;
+      color: #4a5568;
+      font-weight: 500;
+    }
+
+    .filter-bar button.active, .filter-bar button:hover {
+      background: #2d6a4f;
+      color: white;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+    }
+
+    thead tr {
+      background: #d8f3dc;
+      color: #1b4332;
+    }
+
+    th, td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f7fffe; }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.6rem;
+      border-radius: 999px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .badge-fresh { background: #c6f6d5; color: #276749; }
+    .badge-soon  { background: #fefcbf; color: #744210; }
+    .badge-expired { background: #fed7d7; color: #742a2a; }
+
+    .toast {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: #2d6a4f;
+      color: white;
+      padding: 0.75rem 1.25rem;
+      border-radius: 10px;
+      font-size: 0.9rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      display: none;
+      z-index: 999;
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(30px); opacity: 0; }
+      to   { transform: translateY(0);   opacity: 1; }
+    }
+
+    .empty-msg {
+      text-align: center;
+      color: #a0aec0;
+      padding: 2rem;
+      font-style: italic;
+    }
+
+    .summary-bar {
+      display: flex;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.5rem;
+    }
+
+    .summary-box {
+      flex: 1;
+      min-width: 120px;
+      background: white;
+      border-radius: 10px;
+      padding: 1rem;
+      text-align: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    }
+
+    .summary-box .count { font-size: 2rem; font-weight: 800; }
+    .summary-box .label { font-size: 0.8rem; color: #718096; margin-top: 0.25rem; }
+    .summary-box.fresh .count { color: #276749; }
+    .summary-box.soon  .count { color: #744210; }
+    .summary-box.expired .count { color: #742a2a; }
+  </style>
+</head>
+<body>
+
+<header>
+  <span>🥫</span>
+  <h1>Pantry Expiry Tracker</h1>
+</header>
+
+<div class="container">
+
+  <!-- Summary -->
+  <div class="summary-bar">
+    <div class="summary-box fresh">
+      <div class="count" id="countFresh">–</div>
+      <div class="label">Fresh</div>
+    </div>
+    <div class="summary-box soon">
+      <div class="count" id="countSoon">–</div>
+      <div class="label">Expiring Soon</div>
+    </div>
+    <div class="summary-box expired">
+      <div class="count" id="countExpired">–</div>
+      <div class="label">Expired</div>
+    </div>
+  </div>
+
+  <!-- Add Item -->
+  <div class="card">
+    <h2>➕ Add Pantry Item</h2>
+    <div class="form-row">
+      <input type="text" id="itemName" placeholder="Item name (e.g. Milk)" />
+      <input type="number" id="itemQty" placeholder="Quantity" min="1" />
+      <input type="date" id="itemExpiry" />
+      <button class="btn-add" onclick="addItem()">Add Item</button>
+    </div>
+  </div>
+
+  <!-- Item List -->
+  <div class="card">
+    <h2>📦 Pantry Items</h2>
+    <div class="filter-bar">
+      <button class="active" onclick="filterItems('all', this)">All</button>
+      <button onclick="filterItems('Fresh', this)">✅ Fresh</button>
+      <button onclick="filterItems('Expiring Soon', this)">⚠️ Expiring Soon</button>
+      <button onclick="filterItems('Expired', this)">❌ Expired</button>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Qty</th>
+          <th>Expiry Date</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="pantryTable">
+        <tr><td colspan="5" class="empty-msg">Loading...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  const API = 'http://localhost:5000/api/pantry';
+  let allItems = [];
+  let currentFilter = 'all';
+
+  async function loadItems() {
+    try {
+      const res = await fetch(API);
+      allItems = await res.json();
+      updateSummary();
+      renderTable(allItems);
+    } catch {
+      showToast('⚠️ Could not connect to API. Is the server running?', true);
+      document.getElementById('pantryTable').innerHTML =
+        '<tr><td colspan="5" class="empty-msg">Could not load data. Start the C# API server first.</td></tr>';
+    }
+  }
+
+  function updateSummary() {
+    document.getElementById('countFresh').textContent   = allItems.filter(i => i.status === 'Fresh').length;
+    document.getElementById('countSoon').textContent    = allItems.filter(i => i.status === 'Expiring Soon').length;
+    document.getElementById('countExpired').textContent = allItems.filter(i => i.status === 'Expired').length;
+  }
+
+  function renderTable(items) {
+    const tbody = document.getElementById('pantryTable');
+    if (!items.length) {
+      tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">No items found.</td></tr>';
+      return;
+    }
+    tbody.innerHTML = items.map(item => `
+      <tr>
+        <td><strong>${escHtml(item.name)}</strong></td>
+        <td>${item.quantity}</td>
+        <td>${item.expiryDate}</td>
+        <td><span class="badge ${badgeClass(item.status)}">${item.status}</span></td>
+        <td><button class="btn-danger" onclick="removeItem('${escHtml(item.name)}')">Remove</button></td>
+      </tr>
+    `).join('');
+  }
+
+  function filterItems(filter, btn) {
+    currentFilter = filter;
+    document.querySelectorAll('.filter-bar button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    const filtered = filter === 'all' ? allItems : allItems.filter(i => i.status === filter);
+    renderTable(filtered);
+  }
+
+  function badgeClass(status) {
+    if (status === 'Fresh') return 'badge-fresh';
+    if (status === 'Expiring Soon') return 'badge-soon';
+    return 'badge-expired';
+  }
+
+  async function addItem() {
+    const name   = document.getElementById('itemName').value.trim();
+    const qty    = parseInt(document.getElementById('itemQty').value);
+    const expiry = document.getElementById('itemExpiry').value;
+
+    if (!name || !qty || !expiry) {
+      showToast('Please fill in all fields.', true);
+      return;
+    }
+
+    const res = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, quantity: qty, expiryDate: expiry })
+    });
+
+    if (res.ok) {
+      showToast(`✅ ${name} added!`);
+      document.getElementById('itemName').value  = '';
+      document.getElementById('itemQty').value   = '';
+      document.getElementById('itemExpiry').value = '';
+      loadItems();
+    } else {
+      showToast('Failed to add item.', true);
+    }
+  }
+
+  async function removeItem(name) {
+    if (!confirm(`Remove "${name}"?`)) return;
+    const res = await fetch(`${API}/${encodeURIComponent(name)}`, { method: 'DELETE' });
+    if (res.ok) {
+      showToast(`🗑️ ${name} removed.`);
+      loadItems();
+    } else {
+      showToast('Failed to remove item.', true);
+    }
+  }
+
+  function showToast(msg, isError = false) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.style.background = isError ? '#e53e3e' : '#2d6a4f';
+    t.style.display = 'block';
+    setTimeout(() => t.style.display = 'none', 3000);
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  loadItems();
+</script>
+
+</body>
+</html>

@@ -1,0 +1,17 @@
+[
+  {
+    "Name": "meat",
+    "Quantity": 1,
+    "ExpiryDate": "2026-05-04T00:00:00"
+  },
+  {
+    "Name": "milk",
+    "Quantity": 2,
+    "ExpiryDate": "2026-04-05T00:00:00"
+  },
+  {
+    "Name": "mutton",
+    "Quantity": 2,
+    "ExpiryDate": "2026-04-06T00:00:00"
+  }
+]
